@@ -1,5 +1,7 @@
 # Turing Smart Screen — Environment Setup
 
+<img width="3307" height="1060" alt="ubuntu" src="https://github.com/user-attachments/assets/58099521-ad9c-4d4e-ba4c-6a37dec5961c" />
+
 This repository currently contains scripts to set up and tear down a Python virtual environment for a (future) application called "Turing Smart Screen". The application code and entry points are not present in this repository at the moment. The scripts are designed for Linux systems using apt (Debian/Ubuntu) or dnf (Fedora/RHEL/CentOS/Rocky/Alma).
 
 If/when application code is added here, this README should be updated to reflect actual modules, entry points, and runtime instructions.
