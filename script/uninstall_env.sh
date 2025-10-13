@@ -1,76 +1,89 @@
 #!/bin/bash
-# ============================================================
-# 🧹 Safe Uninstall Script for Python Environment
-# For Ubuntu — cleans up the environment created by the setup script
-# Author: Bruno
-# ============================================================
+# ===================================================================
+# 🗑️ Turing Smart Screen Uninstallation Script
+# This script will:
+# 1. Stop and disable the systemd service.
+# 2. Remove the systemd service file.
+# 3. Securely remove the application directory.
+# Author: Bruno (Created with Gemini)
+# ===================================================================
 
-# 1️⃣ Confirm with the user before starting
-echo "⚠️ This script will permanently remove the following:"
-echo "   - The 'venv' virtual environment directory"
-echo "   - The 'requirements.txt' file"
-echo ""
-read -p "Are you sure you want to continue? [y/N] " confirm
-echo ""
+set -e # Stop on any error
 
-if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-    echo "🛑 Uninstall cancelled by user."
-    exit 1
-fi
+# --- Configuration ---
+# ⚠️ IMPORTANT: Please verify these variables match your setup!
+SERVICE_NAME="turing-smart-screen.service"
+PROJECT_DIR="/opt/turing-smart-screen-python" # The main directory of your application
+# --- End of Configuration ---
 
-# 2️⃣ Deactivate virtual environment if it's active
-# This is good practice, though removing the directory makes it unusable anyway.
-if [[ -n "$VIRTUAL_ENV" ]]; then
-    echo "🐍 Deactivating active virtual environment..."
-    deactivate
-fi
+SERVICE_FILE="/etc/systemd/system/$SERVICE_NAME"
 
-# 3️⃣ Remove the virtual environment directory
-if [ -d "venv" ]; then
-    echo "🗑️ Removing virtual environment directory: venv/"
-    rm -rf venv
-    echo "✅ 'venv' directory removed."
+echo "Uninstalling Turing Smart Screen..."
+echo "-------------------------------------"
+
+# ------------------------------------------------------------
+# 1️⃣ Stop and Disable the Systemd Service
+# ------------------------------------------------------------
+echo "🛑 Stopping and disabling the systemd service..."
+if systemctl is-active --quiet "$SERVICE_NAME"; then
+    sudo systemctl stop "$SERVICE_NAME"
+    echo "Service stopped."
 else
-    echo "🤷 'venv' directory not found. Skipping."
+    echo "Service was not running."
 fi
 
-# 4️⃣ Remove the requirements.txt file
-if [ -f "requirements.txt" ]; then
-    echo "🗑️ Removing requirements file: requirements.txt"
-    rm requirements.txt
-    echo "✅ 'requirements.txt' file removed."
+if systemctl is-enabled --quiet "$SERVICE_NAME"; then
+    sudo systemctl disable "$SERVICE_NAME"
+    echo "Service disabled from startup."
 else
-    echo "🤷 'requirements.txt' not found. Skipping."
+    echo "Service was not enabled."
 fi
 
-echo ""
-echo "🎉 Local environment cleanup complete!"
-echo "------------------------------------------------------------"
-
-# 5️⃣ Optional: Remove system-level packages
-echo "📦 The original script installed system packages with 'apt'."
-echo "⚠️ WARNING: Other projects on your system may depend on these packages!"
-echo "   Only proceed if you are sure you no longer need them."
-echo ""
-read -p "Do you want to attempt to remove system packages? [y/N] " confirm_apt
-
-if [[ "$confirm_apt" =~ ^[Yy]$ ]]; then
-    echo "🔧 Removing system development packages..."
-    # We will NOT remove python3 or build-essential as they are critical.
-    # We only target the specific libraries installed for this project.
-    sudo apt remove --purge -y \
-        python3-pip \
-        python3-venv \
-        python3-tk \
-        python3-dev \
-        libdrm-dev
-
-    echo "🧹 Running autoremove to clean up any unused dependencies..."
-    sudo apt autoremove -y
-    echo "✅ System package cleanup complete."
+# ------------------------------------------------------------
+# 2️⃣ Remove the Systemd Service File
+# ------------------------------------------------------------
+echo "🚮 Removing the systemd service file..."
+if [ -f "$SERVICE_FILE" ]; then
+    sudo rm -f "$SERVICE_FILE"
+    sudo systemctl daemon-reload
+    echo "✅ Service file removed and systemd reloaded."
 else
-    echo "👍 Skipping removal of system packages."
+    echo "⚠️ Service file not found, skipping."
 fi
 
+# ------------------------------------------------------------
+# 3️⃣ Remove the Project Directory
+# ------------------------------------------------------------
+echo "🔥 Preparing to delete the project directory: $PROJECT_DIR"
+echo "   This action is IRREVERSIBLE and will delete the venv, scripts, and all configurations."
 echo ""
-echo "🎉 Uninstall process finished!"
+
+read -p "Are you absolutely sure you want to delete this directory? [y/N] " response
+if [[ "$response" =~ ^[Yy]$ ]]; then
+    if [ -d "$PROJECT_DIR" ]; then
+        echo "Deleting directory: $PROJECT_DIR..."
+        sudo rm -rf "$PROJECT_DIR"
+        echo "✅ Project directory successfully deleted."
+    else
+        echo "⚠️ Project directory not found, skipping."
+    fi
+else
+    echo "Deletion aborted by user. The project directory has NOT been removed."
+    exit 0
+fi
+
+# ------------------------------------------------------------
+# 4️⃣ Optional Cleanup Suggestion
+# ------------------------------------------------------------
+echo ""
+echo "💡 Optional Cleanup: System Dependencies"
+echo "The setup script installed some system packages (like python3-dev, libjpeg-dev, etc.)."
+echo "These are NOT removed automatically, as they might be used by other applications."
+echo "If you are sure you no longer need them, you can run a command like 'sudo apt autoremove' to clean up unused packages."
+
+# ------------------------------------------------------------
+# 5️⃣ Final Message
+# ------------------------------------------------------------
+echo ""
+echo "🎉 Uninstallation complete!"
+echo "The Turing Smart Screen service and application files have been removed."
