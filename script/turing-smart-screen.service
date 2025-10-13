@@ -6,13 +6,13 @@ After=network-online.target
 [Service]
 Type=simple
 
-# Verifique se este é o seu usuário correto!
+# Check if this is your correct user!
 User=bruno
 
-# Verifique se este é o caminho correto do seu projeto!
+# Check if this is the correct path for your project!
 WorkingDirectory=/opt/turing-smart-screen-python/
 
-# Caminho completo para o Python do venv, seguido pelo script a ser executado
+# Full path to the venv's Python, followed by the script to be executed
 ExecStart=/opt/turing-smart-screen-python/venv/bin/python3 main.py
 
 Restart=always
