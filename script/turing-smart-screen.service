@@ -1,0 +1,26 @@
+[Unit]
+Description=Turing Smart Screen
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+
+# Verifique se este é o seu usuário correto!
+User=bruno
+
+# Verifique se este é o caminho correto do seu projeto!
+WorkingDirectory=/opt/turing-smart-screen-python/
+
+# Caminho completo para o Python do venv, seguido pelo script a ser executado
+ExecStart=/opt/turing-smart-screen-python/venv/bin/python3 main.py
+
+Restart=always
+
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
