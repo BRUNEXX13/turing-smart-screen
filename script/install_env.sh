@@ -1,13 +1,10 @@
 #!/bin/bash
 # ============================================================
 # 🧠 Python Environment Setup Script (Multi-Distro, Full)
-# Ensures ruamel.yaml, Pillow, GPUtil installed correctly
-# Activates virtualenv and runs configure.py automatically
-# Supports Ubuntu/Debian and Fedora/RHEL/CentOS
-# Author: Bruno
+# Author: Bruno (Refined by Gemini)
 # ============================================================
 
-set -e  # stop on any error
+set -e # stop on any error
 
 # ------------------------------------------------------------
 # 1️⃣ Detect Linux distribution
@@ -25,14 +22,14 @@ case "$DISTRO" in
         PKG_MANAGER="apt"
         PY_DEV="python3-dev"
         DRM_DEV="libdrm-dev"
-        UPDATE_CMD="sudo apt update || true && sudo apt upgrade -y || true"
+        UPDATE_CMD="sudo apt update || true" # Simplified update command
         INSTALL_CMD="sudo apt install -y"
         ;;
     fedora|rhel|centos|rocky|alma)
         PKG_MANAGER="dnf"
         PY_DEV="python3-devel"
         DRM_DEV="libdrm-devel"
-        UPDATE_CMD="sudo dnf update -y"
+        UPDATE_CMD="sudo dnf check-update || true"
         INSTALL_CMD="sudo dnf install -y"
         ;;
     *)
@@ -42,51 +39,40 @@ case "$DISTRO" in
 esac
 
 echo "✅ Detected distribution: $DISTRO"
-echo "📦 Using package manager: $PKG_MANAGER"
-echo "🐍 Python dev package: $PY_DEV"
-echo "🖥️ DRM dev package: $DRM_DEV"
 
 # ------------------------------------------------------------
-# 2️⃣ Update system (ignore invalid PPAs)
+# 2️⃣ Update system package list
 # ------------------------------------------------------------
-echo "🔄 Updating system (ignoring invalid PPAs)..."
-if [ "$PKG_MANAGER" = "apt" ]; then
-    for file in /etc/apt/sources.list.d/*.list; do
-        sudo cp "$file" "$file.bak"
-        sudo sed -i 's/^/#/' "$file"
-    done
-    sudo apt update || true
-    sudo apt upgrade -y || true
-    for file in /etc/apt/sources.list.d/*.list; do
-        sudo mv "$file.bak" "$file" 2>/dev/null || true
-    done
-else
-    eval "$UPDATE_CMD"
-fi
+echo "🔄 Updating system package list..."
+eval "$UPDATE_CMD"
 
 # ------------------------------------------------------------
-# 3️⃣ Install Python, dev packages, and graphics libraries
+# 3️⃣ Install dependencies
 # ------------------------------------------------------------
-echo "📦 Installing Python, dev packages, and graphics libraries..."
+echo "📦 Installing system dependencies..."
 if [ "$PKG_MANAGER" = "apt" ]; then
-    eval "$INSTALL_CMD python3 python3-pip python3-venv python3-tk $PY_DEV build-essential $DRM_DEV \
+    $INSTALL_CMD python3 python3-pip python3-venv python3-tk $PY_DEV build-essential $DRM_DEV \
         libjpeg-dev libpng-dev libtiff-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev \
-        tcl-dev tk-dev libffi-dev libssl-dev"
+        tcl-dev tk-dev libffi-dev libssl-dev
 else
-    eval "$INSTALL_CMD python3 python3-pip python3-venv python3-tk $PY_DEV $DRM_DEV \
+    $INSTALL_CMD python3 python3-pip python3-venv python3-tk $PY_DEV $DRM_DEV \
         libjpeg-turbo-devel libpng-devel libtiff-devel zlib-devel freetype-devel lcms2-devel libwebp-devel \
-        tcl-devel tk-devel libffi-devel openssl-devel"
+        tcl-devel tk-devel libffi-devel openssl-devel
 fi
 
 # ------------------------------------------------------------
 # 4️⃣ Create and activate virtual environment
 # ------------------------------------------------------------
-echo "🐍 Creating virtual environment..."
+echo "🐍 Creating virtual environment in ./venv..."
 python3 -m venv venv
+
+echo "🔌 Activating virtual environment for the duration of this script..."
+# A linha abaixo ativa o venv para que os comandos 'pip' a seguir
+# instalem os pacotes dentro do ambiente isolado.
 source venv/bin/activate
 
 # ------------------------------------------------------------
-# 5️⃣ Create requirements.txt with exact versions
+# 5️⃣ Create requirements.txt
 # ------------------------------------------------------------
 echo "📝 Generating requirements.txt..."
 cat <<EOF > requirements.txt
@@ -109,44 +95,34 @@ EOF
 # ------------------------------------------------------------
 # 6️⃣ Upgrade pip and install Python packages
 # ------------------------------------------------------------
-echo "⚙️ Upgrading pip..."
+echo "⚙️ Upgrading pip and installing Python packages..."
 pip install --upgrade pip
-
-echo "⚙️ Installing Python packages from requirements.txt..."
 pip install --force-reinstall -r requirements.txt
 
 # ------------------------------------------------------------
-# 7️⃣ Force-reinstall ruamel.yaml, Pillow, GPUtil explicitly
+# 7️⃣ Verify installed packages
 # ------------------------------------------------------------
-echo "⚡ Force-reinstalling ruamel.yaml, Pillow, GPUtil to ensure proper import..."
-pip install --force-reinstall ruamel.yaml==0.18.10 Pillow==11.2.1 GPUtil==1.4.0
-
-# ------------------------------------------------------------
-# 8️⃣ Verify installed packages
-# ------------------------------------------------------------
-echo "✅ Checking installed packages..."
+echo "✅ Verifying installed packages..."
 pip list | grep -E "pyserial|PyYAML|psutil|pystray|babel|ruamel|sv-ttk|tkinter-tooltip|uptime|requests|ping3|pyinstaller|Pillow|GPUtil"
 
 # ------------------------------------------------------------
-# 9️⃣ Final message
-# ------------------------------------------------------------
-echo "🎉 Environment successfully configured!"
-
-# ------------------------------------------------------------
-# 🔟 Activate virtual environment automatically
-# ------------------------------------------------------------
-echo "🐍 Activating virtual environment..."
-source venv/bin/activate
-echo "✅ Virtual environment activated! You are now inside venv."
-echo "👉 To manually activate later, use: source venv/bin/activate"
-
-# ------------------------------------------------------------
-# 11️⃣ Run configure.py automatically
+# 8️⃣ Run configure.py automatically
 # ------------------------------------------------------------
 if [ -f "configure.py" ]; then
     echo "⚡ Running configure.py..."
     python3 configure.py
     echo "✅ configure.py executed successfully!"
 else
-    echo "❌ configure.py not found in current directory!"
+    echo "⚠️ configure.py not found, skipping."
 fi
+
+# ------------------------------------------------------------
+# 9️⃣ Final message
+# ------------------------------------------------------------
+echo ""
+echo "🎉 Environment successfully configured!"
+echo "✅ All packages were installed inside the './venv' directory."
+echo ""
+echo "👉 IMPORTANTE: Para trabalhar no seu projeto, você DEVE ativar o ambiente manualmente em seu terminal com o comando:"
+echo "   source venv/bin/activate"
+echo ""
